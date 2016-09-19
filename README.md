@@ -24,7 +24,7 @@ Our ``GotCloud vt`` pipeline detects and genotype variants from a list of aligne
 
 Variant Detection
 -----------------
-Variant detection from each sequence (ang aligned) genome is performed by ``vt discover2`` software tool. The script ``step-1-detect-variant.pl`` provide a mean to automate the variant detection across a large number of sequence genome.
+Variant detection from each sequence (ang aligned) genome is performed by ``vt discover2`` software tool. The script ``step-1-detect-variants.pl`` provide a mean to automate the variant detection across a large number of sequence genome.
 
 The variant detection algorithm consider a variant as a potential candidate variant if there exists a mismatch between the aligned sequence reads and the reference genome. Because such a mismatch can easily occur by random errors, only potential candidate variants passing the following criteria are considered to be ***candidate variants*** in the next steps.
 
@@ -35,5 +35,20 @@ The variant detection algorithm consider a variant as a potential candidate vari
   1. Evidence of variant within overlapping fragments of read pairs will not be double counted. Either end of the overlapping read pair will be soft-clipped using ``bam clipOverlap`` software tool.  
 1. Assuming per-sample heterozygosity of 0.1%, the posterior probability of having variant at the position should be greater than 50%. The method is equivalent to the `glfSingle` model described in http://www.ncbi.nlm.nih.gov/pubmed/25884587
 
- 
+The variant detection step is required only once per sequenced genome, when multiple freezes of variant calls are produced over the course of time.
 
+ 
+Variant Consolidation
+---------------------
+Variants detected from the discovery step will be merged across all samples. This step is implemented in the ``step-2-detect-variants.pl`` scripts.
+
+1. Each non-reference allele normalized by ``vt normalize`` algorithm is merged across the samples, and unique alleles are printed as biallelic candidate variants. 
+2. If there are alleles overlapping with other SNPs and Indels, ``overlap_snp`` and ``overlap_indel`` filters are added in the ``FILTER`` column of the corresponding variant.
+3. If there are tandem repeats with 2 or more repeats with total repeat length of 6bp or longer, the variant is annotated as potential VNTR (Variant Number Tandem Repeat), and ``overlap_vntr`` filters are added to the variant overlapping with the repeat track of the putative VNTR.     
+
+
+Variant Genotyping and Feature Collection
+-----------------------------------------
+
+Inferring Related and Duplicated Samples
+----------------------------------------
