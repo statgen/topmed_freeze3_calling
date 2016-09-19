@@ -20,3 +20,20 @@ Our ``GotCloud vt`` pipeline detects and genotype variants from a list of aligne
 4. **Identifying related and duplicate subjects** : Using ``king`` software and customized scripts included in this repository, we infer pedigree of nuclear families containing related and duplicated samples.
 5. **Variant filtering** : We use the inferred pedigree of related and duplicated samples to calculate the Mendlian consistency statistics using ``vt milk-filter``, and train variant classifier using Support Vector Machine (SVM) implemented in the ``libsvm`` software package.
 6. **Variant annotation and post-processing** : We use ``snpEff`` software tools to annotate each variants and produce a filtered version of variant calls using a customized script.
+
+
+Variant Detection
+-----------------
+Variant detection from each sequence (ang aligned) genome is performed by ``vt discover2`` software tool. The script ``step-1-detect-variant.pl`` provide a mean to automate the variant detection across a large number of sequence genome.
+
+The variant detection algorithm consider a variant as a potential candidate variant if there exists a mismatch between the aligned sequence reads and the reference genome. Because such a mismatch can easily occur by random errors, only potential candidate variants passing the following criteria are considered to be ***candidate variants*** in the next steps.
+
+1. At least two identical evidence of variants must be observed from aligned sequence reads. 
+  1. Each individual evidence will be normalized using the normalization algorithm implemented in ``vt normalize`` software tools.
+  1. Only evidence on the reads with mapping quality 20 or greater will be considered.
+  1. Duplicate reads, QC-passed reads, supplementary reads, secondary reads will be ignored. 
+  1. Evidence of variant within overlapping fragments of read pairs will not be double counted. Either end of the overlapping read pair will be soft-clipped using ``bam clipOverlap`` software tool.  
+1. Assuming per-sample heterozygosity of 0.1%, the posterior probability of having variant at the position should be greater than 50%. The method is equivalent to the `glfSingle` model described in http://www.ncbi.nlm.nih.gov/pubmed/25884587
+
+ 
+
