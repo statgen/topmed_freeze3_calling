@@ -109,6 +109,7 @@ The genotyping step iterate all the merged variant site across the sample. It it
  * NM1 : Average per-read mismatches for non-reference alleles
  * NM0 : Average per-read mismatches for reference alleles
 
+The genotyping was done by adjusting for potential contamination. It uses adjusted genotype likelihood similar to the published method https://github.com/hyunminkang/cleancall, but does not use estimated population allele frequency for the sake of computational efficiency. It conservatively assumes that probability of observing non-reference read given homozygous reference genotype is equal to the half of the estimated contamination level, (or 1%, whichever is greater). The probability of observing reference reads given homozygous non-reference genotype is calculated in a similar way. This adjustment makes the heterozygous call more conservatively when the reference and non-reference allele is strongly imbalanced. For example, if 45 reference alleles and 5 non-reference alleles are observed at Q40, the new method calls it as homozygous reference genotype while the original method ignoring potential contamination calls it as heterozygous genotype. This adjustment improves the genotype quality of contaminated samples by reducing genotype errors by several folds.
 
 Variant Filtering
 -----------------
