@@ -117,7 +117,7 @@ The variant filtering in TOPMed Freeze 3 were performed by (1) first calculating
 
 The negative labels are defined if the Bayes Factor for Mendelian consistency quantified as ``Pr(Reads | HWE, Pedigree) / Pr(Reads | HWD, no Pedigree )`` less than 0.001. Also variant is marked as negative labels if 3 or more samples show 20% of non-reference Mendelian discordance within families or genotype discordance between duplicated samples.
 
-The positive labels are the SNPs found polymorphic either in the 1000 Genomes Omni2.5 array or in HapMap 3.3, with additional evidence of being polymorphic from the sequenced samples. Variants eligible to be marked both positive and negative labels are discarded from the labels.
+The positive labels are the SNPs found polymorphic either in the 1000 Genomes Omni2.5 array or in HapMap 3.3, with additional evidence of being polymorphic from the sequenced samples. Variants eligible to be marked both positive and negative labels are discarded from the labels. The SVM scores trained and predicgted by ``libSVM`` software tool will be annotated in the VCF file. 
 
 Two additional hard filtering was applied additionally. First is excessive heterozygosity filter ``(EXHET)``, if the Hardy-Weinberg disequilbrium p-value was less than 1e-6 in the direction of excessive heterozygosity. ~3,900 variants were additionally filtered out by this criteria.
 
