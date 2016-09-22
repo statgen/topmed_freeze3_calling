@@ -122,3 +122,7 @@ The positive labels are the SNPs found polymorphic either in the 1000 Genomes Om
 Two additional hard filtering was applied additionally. First is excessive heterozygosity filter ``(EXHET)``, if the Hardy-Weinberg disequilbrium p-value was less than 1e-6 in the direction of excessive heterozygosity. ~3,900 variants were additionally filtered out by this criteria.
 
 Another filter is Mendelian discordance filter ``(DISC)``, with 3 or more Mendelian discordance or duplicate discordance observed from the samples. ~370,000 additional variants were filtered out by this criteria.
+
+Questions
+---------
+For further questions, pleast contact Hyun Min Kang (hmkang@umich.edu).
