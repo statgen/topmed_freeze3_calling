@@ -1,0 +1,40 @@
+Reading ReferenceID 0
+
+Open reference
+Done! Sequence length 63025520
+Reading ReferenceID -1
+
+--------------------------------------------------------------------------
+SUMMARY STATISTICS OF THE READS
+Total number of reads: 300
+Total number of paired-end reads: 300
+Total number of properly paired reads: 184
+Total number of unmapped reads: 89
+Total number of reverse strand mapped reads: 116
+Total number of QC-failed reads: 0
+Total number of secondary reads: 0
+Total number of supplementary reads: 0
+Size of singleKeyMap (must be zero): 0
+Size of pairedKeyMap (must be zero): 0
+Total number of missing mates: 0
+Total number of reads excluded from duplicate checking: 89
+--------------------------------------------------------------------------
+Sorting the indices of 0 duplicated records
+# mapped Reads observed: 211
+# unmapped Reads observed: 89
+# Secondary Reads observed: 0
+# Supplementary Reads observed: 0
+# Duplicate Reads observed: 0
+# QC Failure Reads observed: 0
+# Mapping Quality 0 Reads skipped: 8
+# Mapping Quality 255 Reads skipped: 0
+Total # Reads skipped for building recab table: 97
+Total # Reads used for building recab table: 203
+# Bases observed: 7154 - #match: 7101; #mismatch: 53
+# Bases Skipped for DBSNP: 260, for BaseQual < 5: 22, ref 'N': 0
+Writing recalibration table <outdir_path>/bams/Sample3.recal.bam.qemp
+
+Writing <outdir_path>/bams/Sample3.recal.bam
+Successfully marked 0 unpaired and 0 paired duplicate reads
+
+Dedup complete!

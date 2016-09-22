@@ -1,0 +1,7 @@
+                 GotCloud - Genomes On The Cloud
+
+To test the pipeline, run:
+
+  /usr/local/gotcloud/gotcloud test
+
+If the test failed, more detailed output explaining the failure will be printed.

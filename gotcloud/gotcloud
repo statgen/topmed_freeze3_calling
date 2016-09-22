@@ -1,0 +1,310 @@
+#!/usr/bin/perl
+#################################################################
+#
+# Name: gotcloud
+#
+# Description:
+#   Interface to alignment & variant calling pipelines
+#
+#   Determine the types of analysis to be done
+#   Commands can be
+#       perl gotcloud align [options]    : Alignment pipeline
+#       perl gotcloud snpcall  [options] : Snp Calling pipeline
+
+# This is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; See http://www.gnu.org/copyleft/gpl.html
+################################################################
+use strict;
+use warnings;
+use Pod::Usage;
+use File::Basename;
+use File::Copy 'copy';
+use Cwd;
+use Cwd 'abs_path';
+#   Find out where this program lives (in a 'bin' directory).
+#   Symlinks are tricky
+$_ = abs_path($0);
+my ($me, $medir, $mesuffix) = fileparse($_, '\.pl');
+$medir = abs_path($medir);
+my $gotcloudRoot = $medir;
+if ($medir =~ /(.*)\/bin$/) { $gotcloudRoot = $1; }
+
+#############################################################################
+#   Global Variables
+############################################################################
+my $bindir = "$gotcloudRoot/bin";
+my $scriptdir = "$gotcloudRoot/scripts";
+my $audrialog = "/tmp/gotcloud.audria.log"; # Audria output goes here
+my %opts = (
+    audria => "$scriptdir/audria",          # Pgm to collect performance stats
+    audriaopts => "-a -d 30 -o $audrialog",
+);
+
+if (@ARGV && $ARGV[0] eq '-perf') {         # Special undocumented option for dev
+    if (-f $opts{audria}) { $opts{perf} = 1; }
+    else { warn "WARNING: Performance monitoring will not be used, unable to find '$opts{audria}'\n"; }
+    shift @ARGV;
+}
+
+#--------------------------------------------------------------
+#   Initialization - Sort out the help-like parameters
+#--------------------------------------------------------------
+my $fcn = shift(@ARGV);
+if (! $fcn) {
+    warn "ERROR: Missing command. Please see the usage below.\n";
+    pod2usage(-exitval => 2);
+}
+if ($fcn =~ /^([\-])*man$/) {
+    pod2usage(-verbose => 2,  -exitval => 2);
+}
+if ($fcn =~ /^([\-])*help$/) {
+    pod2usage(-exitval => 2);
+}
+if ($fcn =~ /^([\-])*version$/) {
+    my $v = 'UNKNOWN VERSION';
+    my $f = "$gotcloudRoot/release_version.txt";
+    if (-f $f && open (IN, $f)) { $v = <IN>; close(IN); }
+    chomp($v);
+    die "GotCloud version: $v\n";
+}
+
+##################################################################
+# Determine the types of analysis to be done and do it
+##################################################################
+my $cmd = '';
+
+if ( $fcn eq 'test') {
+    my $rc = system("$scriptdir/generate_all_test_results.sh", @ARGV);
+    exit $rc>>8;
+}
+
+if ( $fcn eq 'align') {
+    $cmd = "$bindir/align.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find align.pl\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, @ARGV);
+    if ($opts{perf}) { Perf('stop'); }
+    exit $rc>>8;
+}
+
+if ( $fcn eq 'genomestrip') {
+    $cmd = "$bindir/genomestrip.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find genomestrip.pl\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, @ARGV);
+    if ($opts{perf}) { Perf('stop'); }
+    exit $rc>>8;
+}
+
+if ( $fcn eq 'indel') {
+    $cmd = "$bindir/pipeline.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find pipeline.pl\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, "--name", "$fcn", @ARGV);
+    if ($opts{perf}) { Perf('stop'); }
+    exit $rc>>8;
+}
+
+if ( ($fcn eq 'snpcall') || ($fcn eq 'beagle') || ($fcn eq 'thunder') )
+{
+    $cmd = "$bindir/umake.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find umake.pl\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, "--$fcn", @ARGV);
+    if ($opts{perf}) { Perf('stop'); }
+    if ($rc) { warn "Failed $fcn: ".($rc>>8)."\n"; }
+    exit $rc>>8;
+}
+
+if ($fcn eq 'vc') {
+    $cmd = "$bindir/umake.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find umake.pl\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, @ARGV);
+    if ($opts{perf}) { Perf('stop'); }
+    exit $rc>>8;
+}
+
+if ($fcn eq 'ldrefine') {
+    $cmd = "$bindir/umake.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find umake.pl for ldrefine\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, '--beagle', @ARGV);
+    if ($rc) { warn "Failed the first step of ld genotype refinement: ".($rc>>8)."\n"; }
+    else
+    {
+        $rc = system($cmd, '--thunder', @ARGV);
+        if ($rc)
+        {
+            warn "Failed the 2nd step of ld genotype refinement: ".($rc>>8)."\n";
+            warn "Ensure Beagle has successfully run to completion prior to running thunder\n";
+        }
+    }
+    if ($opts{perf}) { Perf('stop'); }
+    exit $rc>>8;
+}
+
+if ($fcn eq 'beagle4') {
+    $cmd = "$bindir/umake.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find umake.pl for $fcn\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, '--split4', @ARGV);
+    if ($rc) { warn "Failed the first step of beagle4: ".($rc>>8)."\n"; }
+    else
+    {
+        $rc = system($cmd, '--beagle4', @ARGV);
+        if ($rc)
+        {
+            warn "Failed the 2nd step of beagle4: ".($rc>>8)."\n";
+            warn "Ensure split4 has successfully run to completion prior to running beagle version 4\n";
+        }
+    }
+    if ($opts{perf}) { Perf('stop'); }
+    exit $rc>>8;
+}
+
+
+if ( $fcn eq 'pipe') {
+    $cmd = "$bindir/pipeline.pl";
+    if (! -f $cmd) { die "ERROR: Unable to find pipeline.pl\n"; }
+    if ($opts{perf}) { Perf('start'); }
+    my $rc = system($cmd, @ARGV);
+    if ($opts{perf}) { Perf('stop'); }
+    exit $rc>>8;
+}
+
+$cmd = "$bindir/pipeline.pl";
+if (! -f $cmd) { die "ERROR: Unable to find pipeline.pl\n"; }
+unshift(@ARGV, $fcn);
+unshift(@ARGV, "--name");
+if ($opts{perf}) { Perf('start'); }
+my $rc = system($cmd, @ARGV);
+if ($opts{perf}) { Perf('stop'); }
+exit $rc>>8;
+
+
+#--------------------------------------------------------------
+#   Perf(fcn)
+#
+#   Start up a background monitor to collect stats on performance.
+#   This is for development use only.
+#   $fcn should be 'stop' or 'start'.  Note this relies on global variables.
+#--------------------------------------------------------------
+sub Perf {
+    #   Start the monitor
+    if ($_[0] eq 'stop') {              # This might not be needed, but JIC
+        if ($opts{perfpid}) {
+            kill 2, $opts{perfpid};     # Stop audria instance
+            delete $opts{perfpid};
+            warn "Create performance data log '$audrialog'\n";
+        }
+        return;
+    }
+    #   Start the monitor in a child process
+    $opts{perfpid} = fork();
+    if ($opts{perfpid} == 0) {          # Child process
+        warn "Creating performance data log '$audrialog'\n";
+        unlink($opts{audriaopts});      # Always create a new log file
+        my $cmd = "$opts{audria} $opts{audriaopts}";
+        exec($cmd);
+        die "Should never get here after exec\n";
+    }
+    return;
+}
+
+#==================================================================
+#   Perldoc Documentation
+#==================================================================
+
+__END__
+
+=head1 NAME
+
+gotcloud - sequencing and genotyping software pipelines that also work on the cloud
+
+=head1 SYNOPSIS
+
+gotcloud [command] [options]
+
+ Command:
+   help            Print out brief help message
+   man             Print the full documentation in man page style
+   version         Print the gotcloud version
+   align           Run the alignment pipeline
+   snpcall         Run the snp calling pipeline
+   indel           Run the indel calling pipeline
+   ldrefine        Run the LD-aware genotype refinement pipeline
+   beagle4         Run the Beagle version 4 genotype refinement pipeline
+   genomestrip     Run the GenomeSTRiP pipeline.
+   vc              Run the variant call steps that are configured on in your configuration file
+   pipe            Run a custom pipeline defined via configuration
+
+ Visit http://genome.sph.umich.edu/wiki/GotCloud for more detailed documentation
+
+=head1 COMMANDS
+
+=over 8
+
+=item B<help>
+
+Print a brief help message and exits.
+
+=item B<man>
+
+Prints the manual page and exits.
+
+=item B<version>
+
+Prints the got cloud version and exits.
+
+=item B<align>
+
+Run the alignment pipeline. Type 'gotcloud align -help' for more detailed information.
+
+=item B<snpcall>
+
+Run the snp calling pipeline. Type 'gotcloud snpcall -help' for more detailed information
+
+=item B<indel>
+
+Run the indel calling pipeline. Type 'gotcloud indel -help' for more detailed information
+
+=item B<genomestrip>
+
+Run the genomestrip pipeline. Type 'gotcloud genomestrip -help' for more detailed information
+
+=item B<vc>
+
+Run the variant call steps that are configured on in your configuration file.  Type 'gotcloud vc -help' for more detailed information.
+
+=item B<pipe>
+
+Run a custom pipeline defined in configuration, specified using the --name parameter.  Type 'gotcloud pipe -help' for more detailed information.
+
+=item B<ldaware>
+
+Run the LD-aware genotype refinement pipeline pipeline. Type 'gotcloud ldrefine -help' for more detailed information
+
+=item B<beagle>
+
+Run the beagle part of the LD-aware genotype refinement pipeline pipeline. Type 'gotcloud beagle -help' for more detailed information
+
+=item B<thunder>
+
+Run the thunder part of the LD-aware genotype refinement pipeline pipeline. Type 'gotcloud thunder -help' for more detailed information
+
+=item B<beagle4>
+
+Run the Beagle version 4 genotype refinement pipeline pipeline. Type 'gotcloud beagle4 -help' for more detailed information
+
+=back
+
+=head1 DESCRIPTION
+
+B<gotcloud> is an efficient and flexible software pipeline for sequence-based
+genetic analysis. It takes FASTQ, BAM, or VCF-formatted files as input and performs a wide variety of processing/analysis on them.
+
+Visit http://genome.sph.umich.edu/wiki/GotCloud for more detailed documentation
+
+=cut
