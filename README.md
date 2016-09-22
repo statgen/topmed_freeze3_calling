@@ -19,8 +19,16 @@ Our ``GotCloud vt`` pipeline detects and genotype variants from a list of aligne
 3. **Genotype and feature collection** : For each 100kb chunk of genome, the genotyping module implemented in ``vt joint_genotype_sequential`` collects individual genotypes and variant features across the merged sites by iterating each sequence genome focusing on the selected region.  
 4. **Identifying related and duplicate subjects** : Using ``king`` software and customized scripts included in this repository, we infer pedigree of nuclear families containing related and duplicated samples.
 5. **Variant filtering** : We use the inferred pedigree of related and duplicated samples to calculate the Mendlian consistency statistics using ``vt milk-filter``, and train variant classifier using Support Vector Machine (SVM) implemented in the ``libsvm`` software package.
-6. **Variant annotation and post-processing** : We use ``snpEff`` software tools to annotate each variants and produce a filtered version of variant calls using a customized script.
 
+
+Steps to perform variant calling
+---------------------------------
+To produce variant calls using this pipeline, the following input files needs to be prepared
+1. Aligned sequenced reads in BAM or CRAM format. Each BAM and CRAM file should contain one sample per subject. It also must be indexed using ``samtools index`` or equivalent software tools.
+2. A sequence index file. Each line should contain [Sample ID] [Full Path to the BAM/CRAM file] [Contamination Estimates -- put zero if unknown]. See ``data/trio_data.index`` for example.
+3. A pedigree file of nuclear families and duplicates in PED format. The pedgiree file should contain only nuclear families. When a sample is duplicated, all Sample IDs representing the same individual (in the 2nd column) need to presented in a comma-separated way. In the 3rd and 4th column to represend their parents, only representative sample ID is required. See ``data/trio_data.ped`` for example.
+
+After preparing the input files,
 
 Variant Detection
 -----------------
@@ -42,13 +50,14 @@ Variant Consolidation
 ---------------------
 Variants detected from the discovery step will be merged across all samples. This step is implemented in the ``step-2-detect-variants.pl`` scripts.
 
-1. Each non-reference allele normalized by ``vt normalize`` algorithm is merged across the samples, and unique alleles are printed as biallelic candidate variants. 
+1. Each non-reference allele normalized by ``vt normalize`` algorithm is merged across the samples, and unique alleles are printed as biallelic candidate variants. The algorithm is published at http://www.ncbi.nlm.nih.gov/pubmed/25701572
 2. If there are alleles overlapping with other SNPs and Indels, ``overlap_snp`` and ``overlap_indel`` filters are added in the ``FILTER`` column of the corresponding variant.
 3. If there are tandem repeats with 2 or more repeats with total repeat length of 6bp or longer, the variant is annotated as potential VNTR (Variant Number Tandem Repeat), and ``overlap_vntr`` filters are added to the variant overlapping with the repeat track of the putative VNTR.     
 
 
 Variant Genotyping and Feature Collection
 -----------------------------------------
+The genotyping step 
 
 Inferring Related and Duplicated Samples
 ----------------------------------------
