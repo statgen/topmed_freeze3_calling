@@ -21,14 +21,46 @@ Our ``GotCloud vt`` pipeline detects and genotype variants from a list of aligne
 5. **Variant filtering** : We use the inferred pedigree of related and duplicated samples to calculate the Mendlian consistency statistics using ``vt milk-filter``, and train variant classifier using Support Vector Machine (SVM) implemented in the ``libsvm`` software package.
 
 
-Steps to perform variant calling
----------------------------------
-To produce variant calls using this pipeline, the following input files needs to be prepared
-1. Aligned sequenced reads in BAM or CRAM format. Each BAM and CRAM file should contain one sample per subject. It also must be indexed using ``samtools index`` or equivalent software tools.
-2. A sequence index file. Each line should contain [Sample ID] [Full Path to the BAM/CRAM file] [Contamination Estimates -- put zero if unknown]. See ``data/trio_data.index`` for example.
-3. A pedigree file of nuclear families and duplicates in PED format. The pedgiree file should contain only nuclear families. When a sample is duplicated, all Sample IDs representing the same individual (in the 2nd column) need to presented in a comma-separated way. In the 3rd and 4th column to represend their parents, only representative sample ID is required. See ``data/trio_data.ped`` for example.
+Steps to install and perform variant calling
+---------------------------------------------
+To produce variant calls using this pipeline, the following input files needs to be prepared:
 
-After preparing the input files,
+ 1. Aligned sequenced reads in BAM or CRAM format. Each BAM and CRAM file should contain one sample per subject. It also must be indexed using ``samtools index`` or equivalent software tools.
+ 2. A sequence index file. Each line should contain [Sample ID] [Full Path to the BAM/CRAM file] [Contamination Estimates -- put zero if unknown]. See ``data/trio_data.index`` for example.
+ 3. A pedigree file of nuclear families and duplicates in PED format. The pedgiree file should contain only nuclear families. When a sample is duplicated, all Sample IDs representing the same individual (in the 2nd column) need to presented in a comma-separated way. In the 3rd and 4th column to represend their parents, only representative sample ID is required. See ``data/trio_data.ped`` for example.
+
+To clone and build the repository, follow these steps
+```
+  $ git clone https://github.com/statgen/topmed_freeze3_calling.git
+  $ cd topmed_freeze3_calling
+  $ make  # or make -j [numjobs] to expedite the process
+  $ wget ftp://anonymous@share.sph.umich.edu/gotcloud/ref/hs37d5-db142-v1.tgz  # this will take a while
+  $ tar xzf hs37d5-db142-v1.tgz
+  $ rm xzf hs37d5-db142-v1.tgz
+```
+After these steps, modify ``scripts/gcconfig.pm`` to specify input data files or other parameters. Modifying the first section (index and ped file in particular) should be minimally required changes.
+
+To perform variant discovery and consolidation, run the following step
+```
+  $ perl script/step1-detect-and-merge-variants.pl [whitespace separated chromosome names to call]
+```
+After this step, following the instruction to run ``make -f [Makefile] -j [numjobs]`` to complete the discovery taks
+
+To genotype variants, run the following step.
+```
+  $ perl script/step2-joint-genotyping.pl [whitespace separated chromosome names to call]
+```
+After this step, following the instruction to run ``make -f [Makefile] -j [numjobs]`` to complete the discovery taks
+
+To perform variant filtering using pedigre information, follow these steps.
+
+```
+  $ perl script/step3a-compute-milk-score.pl [whitespace separated chromosome names to call]  ## run makefile after this step
+  $ perl script/step3b-run-svm-milk-filter.pl [whitespace separated chromosome names to call]  
+  $ perl script/step3c-run-milk-transfer.pl [whitespace separated chromosome names to call]  ## this step is needed only when performing transfer learning from other chromosomes.
+```
+
+After all these steps, the called variant sites will be available at ``$(OUTPUT_DIR)/svm``, and the genotypes will be available at ``$(OUTPUT_DIR)/paste``. 
 
 Variant Detection
 -----------------
@@ -57,7 +89,36 @@ Variants detected from the discovery step will be merged across all samples. Thi
 
 Variant Genotyping and Feature Collection
 -----------------------------------------
-The genotyping step 
+The genotyping step iterate all the merged variant site across the sample. It iterates each BAM/CRAM files one at a time sequentially for each 1Mb chunk to perform contamination-adjusted genotyping and annotation of variant features for filtering. The following variant features are calculated during the genotyping procedure. 
 
-Inferring Related and Duplicated Samples
-----------------------------------------
+ * AVGDP : Average read depth per sample
+ * AC : Non-reference allele count
+ * AN : Total number of alleles
+ * GC : Genotype count
+ * GN : Total genotype counts
+ * HWEAF : Allele frequency estimated from PL under HWE
+ * HWDAF : Genotype frequency estimated from PL under HWD
+ * IBC : [ Obs(Het) – Exp(Het) ] / Exp[Het]
+ * HWE_SLP : -log(HWE likelihood-ratio test p-value) ⨉ sign(IBC)
+ * ABE : Average fraction [#Ref Allele] across all heterozygotes
+ * ABZ : Z-score for tesing deviation of ABE from expected value (0.5)
+ * BQZ: Z-score testing association between allele and base qualities
+ * CYZ: Z-score testing association between allele and the sequencing cycle
+ * STZ : Z-score testing association between allele and strand
+ * NMZ : Z-score testing association between allele and per-read mismatches
+ * IOR : log [ Obs(non-ref, non-alt alleles) / Exp(non-ref, non-alt alleles) ]
+ * NM1 : Average per-read mismatches for non-reference alleles
+ * NM0 : Average per-read mismatches for reference alleles
+
+
+Variant Filtering
+-----------------
+The variant filtering in TOPMed Freeze 3 were performed by (1) first calculating Mendelian consistency scores using known familial relatedness and duplicates, and (2) training SVM classifier between the known variant site (positive labels) and the Mendelian inconsistent variants (negative labels). 
+
+The negative labels are defined if the Bayes Factor for Mendelian consistency quantified as ``Pr(Reads | HWE, Pedigree) / Pr(Reads | HWD, no Pedigree )`` less than 0.001. Also variant is marked as negative labels if 3 or more samples show 20% of non-reference Mendelian discordance within families or genotype discordance between duplicated samples.
+
+The positive labels are the SNPs found polymorphic either in the 1000 Genomes Omni2.5 array or in HapMap 3.3, with additional evidence of being polymorphic from the sequenced samples. Variants eligible to be marked both positive and negative labels are discarded from the labels.
+
+Two additional hard filtering was applied additionally. First is excessive heterozygosity filter ``(EXHET)``, if the Hardy-Weinberg disequilbrium p-value was less than 1e-6 in the direction of excessive heterozygosity. ~3,900 variants were additionally filtered out by this criteria.
+
+Another filter is Mendelian discordance filter ``(DISC)``, with 3 or more Mendelian discordance or duplicate discordance observed from the samples. ~370,000 additional variants were filtered out by this criteria.
