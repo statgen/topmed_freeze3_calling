@@ -35,8 +35,8 @@ To clone and build the repository, follow these steps
   $ cd topmed_freeze3_calling
   $ make  # or make -j [numjobs] to expedite the process
   $ wget ftp://anonymous@share.sph.umich.edu/gotcloud/ref/hs37d5-db142-v1.tgz  # this will take a while
-  $ tar xzf hs37d5-db142-v1.tgz
-  $ rm xzf hs37d5-db142-v1.tgz
+  $ tar xzvf hs37d5-db142-v1.tgz
+  $ rm hs37d5-db142-v1.tgz
 ```
 After these steps, modify ``scripts/gcconfig.pm`` to specify input data files or other parameters. Modifying the first section (index and ped file in particular) should be minimally required changes.
 
