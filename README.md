@@ -35,29 +35,29 @@ To clone and build the repository, follow these steps
   $ cd topmed_freeze3_calling
   $ make  # or make -j [numjobs] to expedite the process
   $ wget ftp://anonymous@share.sph.umich.edu/gotcloud/ref/hs37d5-db142-v1.tgz  # this will take a while
-  $ tar xzf hs37d5-db142-v1.tgz
-  $ rm xzf hs37d5-db142-v1.tgz
+  $ tar xzvf hs37d5-db142-v1.tgz
+  $ rm hs37d5-db142-v1.tgz
 ```
 After these steps, modify ``scripts/gcconfig.pm`` to specify input data files or other parameters. Modifying the first section (index and ped file in particular) should be minimally required changes.
 
 To perform variant discovery and consolidation, run the following step
 ```
-  $ perl script/step1-detect-and-merge-variants.pl [whitespace separated chromosome names to call]
+  $ perl scripts/step1-detect-and-merge-variants.pl [whitespace separated chromosome names to call]
 ```
 After this step, following the instruction to run ``make -f [Makefile] -j [numjobs]`` to complete the discovery taks
 
 To genotype variants, run the following step.
 ```
-  $ perl script/step2-joint-genotyping.pl [whitespace separated chromosome names to call]
+  $ perl scripts/step2-joint-genotyping.pl [whitespace separated chromosome names to call]
 ```
 After this step, following the instruction to run ``make -f [Makefile] -j [numjobs]`` to complete the discovery taks
 
 To perform variant filtering using pedigre information, follow these steps.
 
 ```
-  $ perl script/step3a-compute-milk-score.pl [whitespace separated chromosome names to call]  ## run makefile after this step
-  $ perl script/step3b-run-svm-milk-filter.pl [whitespace separated chromosome names to call]  
-  $ perl script/step3c-run-milk-transfer.pl [whitespace separated chromosome names to call]  ## this step is needed only when performing transfer learning from other chromosomes.
+  $ perl scripts/step3a-compute-milk-score.pl [whitespace separated chromosome names to call]  ## run makefile after this step
+  $ perl scripts/step3b-run-svm-milk-filter.pl [whitespace separated chromosome names to call]  
+  $ perl scripts/step3c-run-milk-transfer.pl [whitespace separated chromosome names to call]  ## this step is needed only when performing transfer learning from other chromosomes.
 ```
 
 After all these steps, the called variant sites will be available at ``$(OUTPUT_DIR)/svm``, and the genotypes will be available at ``$(OUTPUT_DIR)/paste``. 
