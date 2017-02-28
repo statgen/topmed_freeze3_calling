@@ -471,9 +471,9 @@ class Igor : Program
 
             if (!seenM)
             {
-                std::cerr << "NO! M issue\n";
-                bam_print_key_values(odr->hdr, s);
-                ++no_unaligned_cigars;
+	      //std::cerr << "NO! M issue\n";
+	      //bam_print_key_values(odr->hdr, s);
+	      ++no_unaligned_cigars;
             }
         }
 
