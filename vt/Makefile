@@ -1,5 +1,5 @@
 OPTFLAG = -g -O3 -fopenmp
-INCLUDES = -I./lib -I. -I../htslib/htslib -I./lib/Rmath -I./lib/pcre2
+INCLUDES = -I./lib -I. -I../htslib -I../htslib/htslib -I./lib/Rmath -I./lib/pcre2
 CFLAGS = -pipe -std=c++0x $(OPTFLAG) $(INCLUDES) -D__STDC_LIMIT_MACROS
 CXX = g++
 
