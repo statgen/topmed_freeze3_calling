@@ -19,7 +19,7 @@ our $genotypeUnit = 1000000;
 ############################################################
 ### MODIFY THESE VARIABLES TO IF REFERENCE IS LOCATED ELSEWHERE
 our $refDir = "$FindBin::Bin/../gotcloud.ref";
-our $md5 = "$refDir/md5/%2s/%s/%s";
+our $md5 = "$refDir/md5/%2s/%2s/%s";
 our $ref = "$refDir/hs37d5.fa";
 our $dbsnp = "$refDir/dbsnp_142.b37.vcf.gz";
 our $hapmapvcf = "$refDir/hapmap_3.3.b37.sites.vcf.gz";
