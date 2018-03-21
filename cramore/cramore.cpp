@@ -6,6 +6,7 @@
 //#include <cstdlib>
 #include <getopt.h>
 #include <cstdio>
+#include <cmath>
 #include <vector>
 #include <algorithm>
 #include <utility>
@@ -716,7 +717,7 @@ int32_t runVerifyPairID(int32_t argc, char** argv) {
 
       uint8_t *bcd = (*gtag) ? (uint8_t*) bam_aux_get(b, gtag) : NULL;
       uint32_t ibcd = 0;
-      char* sbcd = ".";
+      const char* sbcd = ".";
       if ( bcd != NULL ) {
 	if ( *bcd == 'Z' ) {
 	  sbcd = bam_aux2Z(bcd);
@@ -1364,7 +1365,7 @@ int32_t runClusterMultinomEM(int32_t argc, char** argv) {
 	
 	llks[r] += (maxZ + log(sumZ));
 	//notice("%d\t%lg\t%lg\t%lg\t%lg\t%lg",c,llks[r],maxZ,sumZ,z[0],z[1]);
-	if ( isnan(llks[r]) )
+	if ( std::isnan(llks[r]) )
 	  abort();
       }
     }
@@ -3073,7 +3074,7 @@ int32_t runSparseGenotype(int32_t argc, char** argv) {
       float fic = 0;
       n = 0;
       est->compute_gl_fic(p_XX_pls, j, ploidy, MLE_HWE_AF_XX, 2, MLE_GF_XX, fic, n);
-      if ( isnanf(fic) ) fic = 0;	  
+      if ( std::isnan(fic) ) fic = 0;	  
       if (n) {
 	bcf_update_info_float(odw.hdr, nv, "IBC", &fic, 1);
       }
@@ -3099,7 +3100,7 @@ int32_t runSparseGenotype(int32_t argc, char** argv) {
       float fic = 0;
       n = 0;
       est->compute_gl_fic(pls, nsamples, ploidy, MLE_HWE_AF, 2, MLE_GF, fic, n);
-      if ( isnanf(fic) ) fic = 0;
+      if ( std::isnan(fic) ) fic = 0;
       if (n) {
 	bcf_update_info_float(odw.hdr, nv, "IBC", &fic, 1);
       }
