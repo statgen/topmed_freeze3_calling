@@ -174,7 +174,7 @@ for my $i (0 .. $#intervals)
         $outputVCFFile = "$individualDir/$sampleID/$intervalNames[$i].sites.bcf";
         $tgt = "$outputVCFFile.OK";
         $dep = "$logDir/start.discovery.OK";
-        @cmd = ("export REF_CACHE=$md5; $samtools view -h $BAMFILE{$sampleID} $intervals[$i] -u | $bamUtil clipoverlap --poolSize 100000000 --in -.ubam --out -.ubam | $vt discover2 -z -q 20 -b + -r $refGenomeFASTAFile -s $sampleID -i $intervals[$i] -o $outputVCFFile 2> $individualDir/$sampleID/$intervalNames[$i].discover2.log");
+        @cmd = ("export REF_CACHE=$md5; $samtools view --reference $ref -h $BAMFILE{$sampleID} $intervals[$i] -u | $bamUtil clipoverlap --poolSize 100000000 --in -.ubam --out -.ubam | $vt discover2 -z -q 20 -b + -r $refGenomeFASTAFile -s $sampleID -i $intervals[$i] -o $outputVCFFile 2> $individualDir/$sampleID/$intervalNames[$i].discover2.log");
         makeJob($partition, $tgt, $dep, @cmd);
         #print SCRIPT "commands[" . ++$no . "]= [ ! -e $outputVCFFile.OK ] && $slurmScriptsDir/$slurmScriptNo.sh && touch $outputVCFFile.OK;\n";
         print SCRIPT "commands[" . ++$no . "]= $slurmScriptsDir/$slurmScriptNo.sh && touch $outputVCFFile.OK;\n";
