@@ -125,4 +125,4 @@ Another filter is Mendelian discordance filter ``(DISC)``, with 3 or more Mendel
 
 Questions
 ---------
-For further questions, pleast contact Hyun Min Kang (hmkang@umich.edu) and Adrian Tan (atks@umich.edu).
+For further questions, pleast contact Hyun Min Kang (hmkang@umich.edu).
